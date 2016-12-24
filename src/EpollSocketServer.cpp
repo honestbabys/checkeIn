@@ -8,18 +8,19 @@
 * NOTES:      Implementation file
 ****************************************************************/
 #include <string.h>
-#include "EpollSocketServer.h"
-#include "CheckedResult.h"
-#include "CheckedMacroes.h"
+#include <fcntl.h>
+#include "include/EpollSocketServer.h"
+#include "include/CheckedResult.h"
+#include "include/CheckedMacroes.h"
 
-CEpollSocketServer::CEpollSocketServer(int port):_iListenFd(-1), _iEpollFd(-1)
+CEpollSocketServer::CEpollSocketServer(int port):_iListenFd(-1), _iEpollFd(-1),pResult(NULL)
 {
 	//完成对应参数的初始化
 	//应该在构造函数中打开socket并且监控，开始处理。
 	CHECKED_DEBUG ("CEpollSocketServer ctor now");
+	pResult = new CCheckedResult();
 	_iListenFd = bindSocket(port);
 	CHECKED_DEBUG("绑定完成返回的句柄为：%d ", _iListenFd);
-
 	listenSocket();
 	doEpoll(_iListenFd);
 }
@@ -30,6 +31,11 @@ CEpollSocketServer::~CEpollSocketServer()
 	//析构函数中关闭socket套接字
 	CHECKED_DEBUG ("CEpollSocketServer dtor now");
 	closeHandle();
+	if(pResult != NULL)
+	{
+		delete pResult;
+		pResult = NULL;
+	}
 }
 
 int CEpollSocketServer::bindSocket(int port)
@@ -87,9 +93,9 @@ void CEpollSocketServer::doEpoll(int listenfd)
 		{
 
 		}
-
 		handleEvents(_iEpollFd, events, ret, listenfd, buf);
 	}
+
 	close(_iEpollFd);
 }
 /************************************************************************/
@@ -105,7 +111,7 @@ void CEpollSocketServer::doEpoll(int listenfd)
 
 void CEpollSocketServer::handleEvents(int epollfd, struct epoll_event *events,int num,int listenfd, char *buf)
 {
-	CHECKED_DEBUG("开始响应事件...");
+	/*
 	int fd = -1;
 	for (int i=0; i<num; i++)
 	{
@@ -117,12 +123,56 @@ void CEpollSocketServer::handleEvents(int epollfd, struct epoll_event *events,in
 		}
 		else if (events[i].events & EPOLLIN) //接收到数据，读socket
 		{
-			CHECKED_DEBUG("有数据可读连");
-			doRead(epollfd, fd, buf); 
+
+			doRead(epollfd, fd, buf);
+
 			CCheckedResult chkResult;
 			string strResponse = chkResult.getCmd(string(buf));
-			write( fd, strResponse.c_str(), strlen(strResponse.c_str()));
+
+			string strResponse = "OK";
+			write(fd, strResponse.c_str(), strlen(strResponse.c_str()));
+
 		} 
+	}
+	*/
+	for (int i = 0; i < num; ++i)
+	{
+		int sockfd = events[i].data.fd;
+		if (sockfd == listenfd)
+		{
+			struct sockaddr_in client_address;
+			socklen_t length = sizeof(client_address);
+			int connfd = accept(listenfd, (struct sockaddr *) &client_address,
+					&length);
+			CHECKED_DEBUG("接收一个请求来自于: %s:%d\n", inet_ntoa(client_address.sin_addr),
+					ntohs(client_address.sin_port));
+
+			addEvent(epollfd, connfd, EPOLLIN|EPOLLET);
+		}
+		else if (events[i].events & EPOLLIN)
+		{
+			memset(buf, '\0', MAXSIZE);
+			int nread = read(sockfd,buf,MAXSIZE);
+			if (nread == -1)
+			{
+				CHECKED_DEBUG("。。。。。。。。。。。。。。。。。。。");
+				close(sockfd);
+				deleteEvent(epollfd, sockfd, EPOLLIN|EPOLLET);
+				break;
+			}
+			else if (nread == 0)
+			{
+				CHECKED_DEBUG("断开一个连接\n");
+				close(sockfd);
+			}
+			else
+			{
+				CHECKED_DEBUG("get %d bytes of content: %s\n", nread, buf);
+				string strResp = pResult->getCmd(string(buf));
+				CHECKED_DEBUG("返回服务器的响应消息为:%s ", strResp.c_str());
+				write(sockfd, strResp.c_str(), strlen(strResp.c_str()));
+			}
+		}
 	}
 }
 
@@ -147,9 +197,6 @@ void CEpollSocketServer::hanldeAccpet(int epollfd, int listenfd)
 void CEpollSocketServer::doRead(int epollfd, int fd, char* buf)
 {
 	bzero(buf, MAXSIZE);
-
-	//有个bug，等功能测试完成后修改。
-	//当发送数据较多时，存在一次接收不到的问题
 	int ret = recv(fd, buf, MAXSIZE-1, 0);
 	if (ret < 0)
 	{
@@ -161,13 +208,13 @@ void CEpollSocketServer::doRead(int epollfd, int fd, char* buf)
 		}
 		*/
 		close(fd);
-		deleteEvent(epollfd,fd,EPOLLIN);
+		deleteEvent(epollfd, fd, EPOLLIN);
 	}
 	else if (ret == 0)
 	{
 		printf("断开一个连接\n");
 		close(fd);
-		deleteEvent(epollfd,fd,EPOLLIN);
+		deleteEvent(epollfd, fd, EPOLLIN);
 	}
 	else
 	{
@@ -176,12 +223,17 @@ void CEpollSocketServer::doRead(int epollfd, int fd, char* buf)
 	}
 }
 
+
+
 void CEpollSocketServer::addEvent(int epollfd,int fd,int state)
 {
 	struct epoll_event ev;
 	ev.events = state;
 	ev.data.fd = fd;
 	epoll_ctl(epollfd,EPOLL_CTL_ADD,fd,&ev);
+	int oldOption = fcntl(fd, F_GETFL);
+	int newOption = oldOption | O_NONBLOCK;
+	fcntl(fd, F_SETFL, newOption);
 }
 void CEpollSocketServer::deleteEvent(int epollfd,int fd,int state)
 {

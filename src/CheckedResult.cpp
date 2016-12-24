@@ -104,7 +104,7 @@ bool CCheckedResult::init()
 	return true;
 }
 
-string CCheckedResult::check(const std::string& strCheckId, std::string& strCheckTime)
+string CCheckedResult::check(const std::string& strCheckId, const std::string& strCheckTime)
 {
 	CHECKED_DEBUG("CCheckedResult::check() now");
 	string strRet = "OK";
@@ -127,8 +127,8 @@ string CCheckedResult::check(const std::string& strCheckId, std::string& strChec
 					iterCheckedInfo->second->_strCheckInTime  = strCheckTime;
 				}
 				else //有上班时间
-				{   
-					if(CCheckedTime(strCheckTime) < CCheckedTime(iterCheckedInfo->second->_strCheckInTime))
+				{   CCheckedTime chkTime(strCheckTime);
+					if(chkTime < iterCheckedInfo->second->_strCheckInTime)
 					{
 						CHECKED_DEBUG("已存在打卡时间，发现更早打卡时间，打卡时间为:%s", strCheckTime.c_str());
 						iterCheckedInfo->second->_strCheckInTime = strCheckTime;
@@ -136,7 +136,7 @@ string CCheckedResult::check(const std::string& strCheckId, std::string& strChec
 					if (iterCheckedInfo->second->_strCheckOutTime.empty()) //无下班时间
 					{
 						//打卡时间大于上班时间，更新为下班时间
-						if (CCheckedTime(strCheckTime) > CCheckedTime(iterCheckedInfo->second->_strCheckInTime))
+						if (chkTime > iterCheckedInfo->second->_strCheckInTime)
 						{
 							CHECKED_DEBUG("当前无下班时间，打卡为下班时间，下班时间为:%s", strCheckTime.c_str());
 							iterCheckedInfo->second->_strCheckOutTime = strCheckTime;
@@ -145,7 +145,7 @@ string CCheckedResult::check(const std::string& strCheckId, std::string& strChec
 					else
 					{
 						//打卡时间大于上班时间，更新为下班时间
-						if (CCheckedTime(strCheckTime) > CCheckedTime(iterCheckedInfo->second->_strCheckOutTime))
+						if (chkTime > iterCheckedInfo->second->_strCheckOutTime)
 						{
 							CHECKED_DEBUG("当前已存在下班时间，发现更晚下班时间，下班时间为:%s", strCheckTime.c_str());
 							iterCheckedInfo->second->_strCheckOutTime = strCheckTime;
@@ -156,7 +156,7 @@ string CCheckedResult::check(const std::string& strCheckId, std::string& strChec
 		}
 		else //无打卡信息
 		{
-			CCheckedInfo *pInfo = new CCheckedInfo;
+			CCheckedInfo *pInfo = new CCheckedInfo();
 			pInfo->_strCheckInTime = strCheckTime;
 			_mapCheckedInfo.insert(map<string,CCheckedInfo*>::value_type(strCheckId, pInfo));
 		}

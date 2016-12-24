@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <iostream>
+#include "include/CheckedResult.h"
 
 #ifndef _EPOLLSOCKETSERVER_H
 #define _EPOLLSOCKETSERVER_H
@@ -41,6 +42,7 @@ private:
 	int _iListenFd;
 	int _iEpollFd; 
 	std::string _strMsg;
+	CCheckedResult *pResult;
 	const static int EPOLLEVENTS = 100;
 	const static int FDSIZE = 1000;
 	const static int MAXSIZE = 1024;

@@ -3,6 +3,9 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include "include/SocketClient.h"
+#include "include/CheckedMacroes.h"
+#include <iostream>
+using namespace std;
 
 CSocketClient::CSocketClient():_iClientSock(-1)
 {
@@ -42,22 +45,23 @@ void CSocketClient::connectServer(const char *ip, const int port)
 	}
 }
 
-int CSocketClient::sendServer(const std::string& strContent)
+string CSocketClient::sendServer(const std::string& strContent)
 {
-	send(_iClientSock,strContent.c_str(),strlen(strContent.c_str()),0);
+	int iRet = write(_iClientSock ,strContent.c_str(), strlen(strContent.c_str()));
+	if (iRet < 0)
+	{
+
+	}
+	CHECKED_DEBUG("发送指令到服务器成功!");
 	char buffer[MAXSIZE];
 	bzero(buffer,MAXSIZE);
-
-	int length = 0;
-	while( length = recv(_iClientSock,buffer,MAXSIZE,0))
+	iRet = read(_iClientSock, buffer, MAXSIZE);
+	if(iRet < 0)
 	{
-		if(length < 0)
-		{
-			break;
-		}
-		bzero(buffer,MAXSIZE);    
+
 	}
-	return 0;
+	CHECKED_DEBUG("接收到的服务器响应为：%s", buffer);
+	return string(buffer);
 }
 
 void CSocketClient::closeHandle()

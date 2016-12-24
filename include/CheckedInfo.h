@@ -7,7 +7,6 @@
 * VERSION:    1.0
 * NOTES:      header file
 ****************************************************************/
-
 #ifndef _CHECKEDINO_H
 #define _CHECKEDINO_H
 #include <iostream>

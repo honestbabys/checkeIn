@@ -7,7 +7,6 @@
 * VERSION:    1.0
 * NOTES:      header file
 ****************************************************************/
-
 #include <map>
 #include <vector>
 #include "CheckedTime.h"
@@ -37,7 +36,6 @@ typedef struct _CheckedInfo{
 }CheckedInfo;
 */
 
-
 class CCheckedResult
 {
 public:
@@ -49,16 +47,15 @@ private:
 	bool init(); //加载文件中信息，后期考虑RAII实现
 	void clearAllCheckedInfo();
 	std::string getCheckedInfo(const std::string& strCheckedNo = "");
-	std::string check(const std::string& strCheckId, std::string& strCheckTime);  //打卡
+	std::string check(const std::string& strCheckId, const std::string& strCheckTime);  //打卡
 	time_t convertToTime(const std::string strTime); //时间操作，废弃，增加时间操作类
 	void checkedVerfify(); //根据考勤数据计算考勤工时
 	void getWorkTime(const std::string& strCheckedInTime, const std::string& strCheckedOutTime, std::string& strWorkTime, _CheckedType& type); //根据打卡时间计算工时
 	bool verifyCheckedId(const std::string& strCheckedId); //校验工号合法
 	void clearEmplyoeeInfo();
+
 private:
-
 	std::map<std::string,CCheckedInfo*> _mapCheckedInfo; //保存员工考勤信息 _mapInstCtrlMemory
-
 	std::vector<std::map<std::string,std::string> > _vecEmployeeInfo; //保存员工信息
 };
 
