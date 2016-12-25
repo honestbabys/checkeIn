@@ -12,6 +12,7 @@
 #include "include/EpollSocketServer.h"
 #include "include/CheckedResult.h"
 #include "include/CheckedMacroes.h"
+#include "include/Exception.h"
 
 CEpollSocketServer::CEpollSocketServer(int port):_iListenFd(-1), _iEpollFd(-1),pResult(NULL)
 {
@@ -19,10 +20,21 @@ CEpollSocketServer::CEpollSocketServer(int port):_iListenFd(-1), _iEpollFd(-1),p
 	//应该在构造函数中打开socket并且监控，开始处理。
 	CHECKED_DEBUG ("CEpollSocketServer ctor now");
 	pResult = new CCheckedResult();
-	_iListenFd = bindSocket(port);
-	CHECKED_DEBUG("绑定完成返回的句柄为：%d ", _iListenFd);
-	listenSocket();
-	doEpoll(_iListenFd);
+	try
+	{
+		_iListenFd = bindSocket(port);
+		CHECKED_DEBUG("绑定完成返回的句柄为：%d ", _iListenFd);
+		listenSocket();
+		doEpoll(_iListenFd);
+	}
+	catch(CException e)
+	{
+		CHECKED_DEBUG ("发生异常，异常原因：%s",e.what());
+	}
+	catch(...)
+	{
+
+	}
 }
 
 CEpollSocketServer::~CEpollSocketServer()
@@ -46,7 +58,7 @@ int CEpollSocketServer::bindSocket(int port)
 	if (listenfd == -1)
 	{
 		CHECKED_DEBUG("socket error! ");
-		return -1;
+		throw CException(1001,"socket error! ");
 	}
 	bzero(&servAddr, sizeof(servAddr));
 	servAddr.sin_family = AF_INET;
@@ -56,7 +68,7 @@ int CEpollSocketServer::bindSocket(int port)
 	if (bind(listenfd,(struct sockaddr*)&servAddr, sizeof(servAddr)) == -1)
 	{
 		CHECKED_DEBUG("bind error! ");
-		return -1;
+		throw CException(1002,"socket bind error! ");
 	}
 	CHECKED_DEBUG("绑定完成, 端口号:%d ", port);
 	return listenfd;
@@ -71,7 +83,7 @@ int CEpollSocketServer::listenSocket()
 		if (iRes == -1)
 		{
 			CHECKED_DEBUG("listen error! ");
-			return -1;
+			throw CException(1003,"socket listen error! ");
 		}
 	}
 	CHECKED_DEBUG("listenSocketd()调用完成");
@@ -91,7 +103,7 @@ void CEpollSocketServer::doEpoll(int listenfd)
 		ret = epoll_wait(_iEpollFd, events, EPOLLEVENTS, -1);
 		if (ret < 0) //epoll_wait失败
 		{
-
+			throw CException(1004,"epoll_wait error! ");
 		}
 		handleEvents(_iEpollFd, events, ret, listenfd, buf);
 	}
@@ -108,7 +120,6 @@ void CEpollSocketServer::doEpoll(int listenfd)
 （5）使用epoll_ctl把客户端描述符添加到epollfd指定的 epoll 内核事件表中，监听服务器端监听的描述符是否可读。
 （6）当客户端描述符有数据可读时，则触发epoll_wait返回，然后执行读取。                                                                     */
 /************************************************************************/
-
 void CEpollSocketServer::handleEvents(int epollfd, struct epoll_event *events,int num,int listenfd, char *buf)
 {
 	/*
@@ -185,7 +196,7 @@ void CEpollSocketServer::hanldeAccpet(int epollfd, int listenfd)
 	if (clifd == -1)
 	{
 		CHECKED_DEBUG("连接建立异常");
-		return;
+		throw CException(1005,"socket accept error! ");
 	}
 	else
 	{
@@ -200,13 +211,6 @@ void CEpollSocketServer::doRead(int epollfd, int fd, char* buf)
 	int ret = recv(fd, buf, MAXSIZE-1, 0);
 	if (ret < 0)
 	{
-		/* 对非阻塞 IO ，下面的条件成立表示数据已经全部读取完毕。此后 epoll 就能再次触发 sockfd 上的 EPOLLIN 事件，以驱动下一次读操作 */
-		/*
-		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
-		{
-			break;
-		}
-		*/
 		close(fd);
 		deleteEvent(epollfd, fd, EPOLLIN);
 	}
@@ -222,8 +226,6 @@ void CEpollSocketServer::doRead(int epollfd, int fd, char* buf)
 		modifyEvent(epollfd,fd,EPOLLOUT);
 	}
 }
-
-
 
 void CEpollSocketServer::addEvent(int epollfd,int fd,int state)
 {

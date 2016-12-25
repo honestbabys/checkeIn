@@ -1,3 +1,12 @@
+/****************************************************************
+* (C) Copyright by sam. All rights reserved.
+* FILENAME:   SocketClient.h
+* FUNCTION:   the class CSocketClient declaration file
+* AUTHOR:     sam
+* DATE:       2016-12-24
+* VERSION:    1.0
+* NOTES:      header file
+****************************************************************/
 #ifndef _SOCKETCLIENT_H
 #define _SOCKETCLIENT_H
 #include <string>

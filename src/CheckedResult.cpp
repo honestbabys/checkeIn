@@ -175,6 +175,7 @@ string CCheckedResult::getCheckedInfo(const string& strCheckedNo)
 	std::map<std::string,CCheckedInfo*>::iterator iterCheckedInfo;
 	ostringstream os;
 	os.clear();
+	string strType = "NORMAL";
 	if (!strCheckedNo.empty())
 	{
 		if ((iterCheckedInfo=_mapCheckedInfo.find(strCheckedNo)) != _mapCheckedInfo.end())
@@ -182,7 +183,30 @@ string CCheckedResult::getCheckedInfo(const string& strCheckedNo)
 			os<<"\n\n";
 			os<<"ID= "<<iterCheckedInfo->first<<"\n";
 			os<<"NAME= "<<iterCheckedInfo->second->_strCheckedName<<"\n";
-			os<<"TYPE= "<<iterCheckedInfo->second->_Type<<"\n";
+			switch(iterCheckedInfo->second->_Type)
+			{
+				case 0:
+					strType = "NORMAL";
+					break;
+				case 1:
+					strType = "ABSENT";
+					break;
+				case 2:
+					strType = "WORK LATE";
+					break;
+				case 3:
+					strType = "LEAVE EARLY";
+					break;
+				case 4:
+					strType = "WORK LATE&LEAVE EARLY";
+					break;
+				case 5:
+					strType = "PUNCH ABNORMAL";
+					break;
+				default:
+					break;
+			}
+			os<<"TYPE= "<<strType<<"\n";
 			os<<"CHECK IN= "<<iterCheckedInfo->second->_strCheckInTime<<"\n";
 			os<<"CHECK OUT= "<<iterCheckedInfo->second->_strCheckOutTime<<"\n";
 			os<<"WORK TIME= "<<iterCheckedInfo->second->_strWorkTime;
@@ -207,7 +231,6 @@ string CCheckedResult::getCheckedInfo(const string& strCheckedNo)
 				}
 
 			}
-
 		}
 	}
 	else
@@ -217,7 +240,30 @@ string CCheckedResult::getCheckedInfo(const string& strCheckedNo)
 			os<<"\n\n";
 			os<<"ID= "<<iterCheckedInfo->first<<"\n";
 			os<<"NAME= "<<iterCheckedInfo->second->_strCheckedName<<"\n";
-			os<<"TYPE= "<<iterCheckedInfo->second->_Type<<"\n";
+			switch(iterCheckedInfo->second->_Type)
+			{
+				case 0:
+					strType = "NORMAL";
+					break;
+				case 1:
+					strType = "ABSENT";
+					break;
+				case 2:
+					strType = "WORK LATE";
+					break;
+				case 3:
+					strType = "LEAVE EARLY";
+					break;
+				case 4:
+					strType = "WORK LATE&LEAVE EARLY";
+					break;
+				case 5:
+					strType = "PUNCH ABNORMAL";
+					break;
+				default:
+					break;
+			}
+			os<<"TYPE= "<<strType<<"\n";
 			os<<"CHECK IN= "<<iterCheckedInfo->second->_strCheckInTime<<"\n";
 			os<<"CHECK OUT= "<<iterCheckedInfo->second->_strCheckOutTime<<"\n";
 			os<<"WORK TIME= "<<iterCheckedInfo->second->_strWorkTime;

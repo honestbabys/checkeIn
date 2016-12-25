@@ -22,15 +22,12 @@ int main()
 	CHECKED_DEBUG("工号2的打卡返回的结果为：%s", strResponse.c_str());
 	*/
 
-
 	std::string strCmd = "1,1,10:00";
 	std::string strResponse = chkRes.getCmd(strCmd);
 	CHECKED_DEBUG("工号为1打卡返回的结果为：%s", strResponse.c_str());
 	strCmd = "1,1,17:31";
 	strResponse = chkRes.getCmd(strCmd);
 	CHECKED_DEBUG("工号为1打卡返回的结果为：%s", strResponse.c_str());
-
-
 
 	CHECKED_DEBUG("打卡测试结束........................................");
 	CHECKED_DEBUG("开始进行考勤结果展示................................");
